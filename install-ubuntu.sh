@@ -599,15 +599,28 @@ ROOM_IDLE_HOURS=4
 EOF
   chmod 0600 "$ENV_FILE"
   if [[ "$ACCESS_MODE" == "caddy" ]]; then
-    docker compose --env-file "$ENV_FILE" --profile standalone -f "$APP_DIR/compose.yaml" pull caddy
+    docker compose --env-file "$ENV_FILE" --profile standalone -f "$APP_DIR/compose.yaml" pull caddy gateway
     docker compose --env-file "$ENV_FILE" --profile standalone -f "$APP_DIR/compose.yaml" up -d --build
   else
     if own_caddy_running; then
       docker compose --env-file "$ENV_FILE" --profile standalone -f "$APP_DIR/compose.yaml" stop caddy || true
       docker compose --env-file "$ENV_FILE" --profile standalone -f "$APP_DIR/compose.yaml" rm -f caddy || true
     fi
-    docker compose --env-file "$ENV_FILE" -f "$APP_DIR/compose.yaml" up -d --build app
+    docker compose --env-file "$ENV_FILE" -f "$APP_DIR/compose.yaml" up -d --build app gateway
   fi
+  local gateway_address
+  gateway_address="$(docker compose --env-file "$ENV_FILE" -f "$APP_DIR/compose.yaml" port gateway 8080 2>/dev/null || true)"
+  if [[ -z "$gateway_address" ]]; then
+    echo "Docker не опубликовал порт $APP_HTTP_PORT через gateway. Проверьте сеть и конфигурацию Compose." >&2
+    docker compose --env-file "$ENV_FILE" -f "$APP_DIR/compose.yaml" logs --tail=40 gateway >&2 || true
+    exit 1
+  fi
+  if ! curl -fsS --max-time 5 "http://127.0.0.1:$APP_HTTP_PORT/health" >/dev/null; then
+    echo "Порт опубликован ($gateway_address), но проверка игры не прошла." >&2
+    docker compose --env-file "$ENV_FILE" -f "$APP_DIR/compose.yaml" logs --tail=40 app gateway >&2 || true
+    exit 1
+  fi
+  echo "Проверка игрового порта пройдена: $gateway_address"
   if [[ "$ACCESS_MODE" == "proxy" ]]; then
     write_proxy_examples
     if ! integrate_host_caddy && ! integrate_host_nginx; then
