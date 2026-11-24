@@ -7,6 +7,7 @@ RUN npm ci --omit=dev && mkdir -p /data && chown node:node /data
 
 COPY server.js rules.js ./
 COPY public ./public
+COPY rules.js ./public/rules.js
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
