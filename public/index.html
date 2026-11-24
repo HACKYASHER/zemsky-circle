@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17332a">
+  <meta name="description" content="Кооперативная историческая онлайн-игра о Втором ополчении и Смутном времени.">
+  <title>Земский круг — общая партия</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Земский круг — на главную">
+      <span class="seal" aria-hidden="true">ЗК</span>
+      <span><small>кооперативная историческая игра</small><strong>Земский круг</strong></span>
+    </a>
+    <nav class="topnav" aria-label="Справка">
+      <button type="button" class="nav-button" data-open-dialog="rulesDialog">Правила</button>
+      <button type="button" class="nav-button" data-open-dialog="sourcesDialog">Хроника и источники</button>
+      <span class="connection-state" id="connectionState"><i></i><span>Подключаемся…</span></span>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="screen home-screen" id="homeScreen">
+      <div class="home-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Осень 1611 — начало 1613 года</p>
+          <h1>Соберите<br><em>земский круг</em></h1>
+          <p class="hero-lede">Пройдите путь от Нижнего Новгорода до Москвы и помогите разным землям договориться о будущем страны.</p>
+          <div class="hero-tags"><span>2–4 игрока</span><span>6 раундов</span><span>Общие решения</span></div>
+          <div class="route-art" aria-label="Маршрут игры: Нижний Новгород — Ярославль — Москва — Земский собор">
+            <div class="route-art-line"></div>
+            <div class="route-art-stop"><b>Н</b><span>Нижний</span></div>
+            <div class="route-art-stop"><b>Я</b><span>Ярославль</span></div>
+            <div class="route-art-stop"><b>М</b><span>Москва</span></div>
+            <div class="route-art-stop"><b>С</b><span>Собор</span></div>
+          </div>
+        </div>
+        <div class="entry-card">
+          <div class="entry-card-head">
+            <p class="eyebrow">Онлайн-партия</p>
+            <h2>Встречаемся в лобби</h2>
+            <p>Один игрок создаёт комнату и отправляет приглашение остальным.</p>
+          </div>
+          <label for="playerName">Ваше имя</label>
+          <input id="playerName" maxlength="22" autocomplete="nickname" placeholder="Например, Мария">
+          <button class="button button-primary button-wide" id="createRoomButton" type="button">Создать лобби <span aria-hidden="true">→</span></button>
+          <div class="entry-divider"><span>или войти по коду</span></div>
+          <label for="roomCodeInput">Код приглашения</label>
+          <div class="join-row">
+            <input id="roomCodeInput" maxlength="8" autocomplete="off" placeholder="8 символов" aria-label="Код приглашения">
+            <button class="button button-secondary" id="joinRoomButton" type="button">Войти</button>
+          </div>
+          <div class="resume-card hidden" id="resumeCard">
+            <div><strong id="resumeTitle">Сохранённая партия</strong><span id="resumeText">Вернитесь в свою комнату.</span></div>
+            <button type="button" class="button button-secondary" id="resumeButton">Открыть</button>
+            <button type="button" class="text-button" id="forgetButton">Забыть</button>
+          </div>
+          <p class="entry-footnote" id="serverHint">Комнаты закрытые: войти можно только по приглашению. Ссылка на комнату содержит код доступа.</p>
+        </div>
+      </div>
+      <div class="home-bottom">
+        <div class="feature"><span class="feature-mark">01</span><div><b>Одна команда</b><p>Решения и общий итог зависят от всех игроков.</p></div></div>
+        <div class="feature"><span class="feature-mark">02</span><div><b>Каждый ход виден</b><p>Если ходит другой участник, вы увидите, кого ждёт игра.</p></div></div>
+        <div class="feature"><span class="feature-mark">03</span><div><b>История между раундами</b><p>Короткие факты связывают игровые решения с событиями эпохи.</p></div></div>
+      </div>
+    </section>
+
+    <section class="screen lobby-screen hidden" id="lobbyScreen">
+      <div class="screen-heading">
+        <div><p class="eyebrow">Комната ожидания</p><h1>Собираем земский круг</h1><p class="muted">Партия начнётся, когда ведущий и остальные участники отметятся как готовые.</p></div>
+        <button type="button" class="button button-quiet" id="lobbyLeaveButton">Выйти из лобби</button>
+      </div>
+      <div class="lobby-layout">
+        <section class="panel invite-panel">
+          <p class="eyebrow">Приглашение</p>
+          <p class="muted small">Отправьте друзьям код или ссылку. В лобби может быть до четырёх участников.</p>
+          <div class="invite-code" id="inviteCode">········</div>
+          <button type="button" class="button button-primary button-wide" id="copyInviteButton">Скопировать ссылку</button>
+          <div class="invite-url" id="inviteUrl"></div>
+          <div class="access-note"><span class="lock-icon">◆</span><span>Комната не отображается в общем списке. Код приглашения — ключ доступа.</span></div>
+        </section>
+        <section class="panel players-panel">
+          <div class="panel-title-row"><div><p class="eyebrow">Участники</p><h2 id="playerCountLabel">Игроки · 1/4</h2></div><span class="status-pill" id="lobbyStatus">Ждём игроков</span></div>
+          <div class="player-list" id="lobbyPlayers"></div>
+          <div class="lobby-actions" id="lobbyActions"></div>
+          <p class="lobby-note" id="lobbyNote">Ведущий сможет начать партию после того, как подключатся минимум два человека и все отметятся как готовые.</p>
+        </section>
+      </div>
+      <div class="lobby-bottom"><span>Роли закрепляются на раунд и переходят между игроками по очереди.</span><button type="button" class="text-button" data-open-dialog="rulesDialog">Посмотреть правила</button></div>
+    </section>
+
+    <section class="screen game-screen hidden" id="gameScreen">
+      <div class="game-head">
+        <div><p class="eyebrow" id="roomBadge">Общая партия</p><h1>Путь ополчения</h1></div>
+        <div class="game-head-actions">
+          <span class="round-badge">Раунд <b id="roundNumber">1</b><span>/ 6</span></span>
+          <button type="button" class="button button-quiet" id="gameLeaveButton">Выйти</button>
+          <button type="button" class="button button-quiet hidden" id="gameCloseButton">Закрыть для всех</button>
+        </div>
+      </div>
+      <div class="turn-banner" id="turnBanner" aria-live="polite"></div>
+      <div class="game-layout">
+        <aside class="left-rail">
+          <section class="panel route-panel">
+            <p class="eyebrow">Исторический маршрут</p><h2>Путь ополчения</h2>
+            <ol class="route-list" id="routeList"></ol>
+            <p class="route-hint" id="routeHint"></p>
+          </section>
+          <section class="panel tracks-panel">
+            <p class="eyebrow">Общее состояние</p><h2>Шкалы партии</h2>
+            <div id="trackList"></div>
+          </section>
+        </aside>
+        <section class="main-rail">
+          <article class="phase-card" id="phaseCard" aria-live="polite"></article>
+          <div class="role-section-head"><div><p class="eyebrow">Ходы команды</p><h2>Совет четырёх ролей</h2></div><p>По одному действию на роль за раунд</p></div>
+          <div class="role-grid" id="roleGrid"></div>
+        </section>
+        <aside class="right-rail">
+          <section class="panel log-panel">
+            <div class="panel-title-row"><div><p class="eyebrow">Общая хроника</p><h2>Записи партии</h2></div><button type="button" class="icon-button" id="downloadLogButton" title="Скачать журнал" aria-label="Скачать журнал партии">↓</button></div>
+            <div class="log-list" id="logList"></div>
+          </section>
+          <section class="panel room-mini">
+            <p class="eyebrow">Ваша комната</p><div class="mini-code" id="miniCode">········</div>
+            <button type="button" class="button button-secondary button-wide" id="miniCopyButton">Скопировать приглашение</button>
+            <p class="small muted">Автосохранение работает на сервере. После обрыва связи вернитесь по ссылке и продолжите с того же места.</p>
+          </section>
+        </aside>
+      </div>
+      <footer class="game-footer"><span>Роли и числовые шкалы — игровая модель.</span><button type="button" class="text-button" data-open-dialog="sourcesDialog">Историческая справка и источники</button></footer>
+    </section>
+  </main>
+
+  <dialog class="modal" id="rulesDialog">
+    <div class="modal-head"><div><p class="eyebrow">Памятка</p><h2>Как играть</h2></div><button class="modal-close" type="button" data-close-dialog="rulesDialog" aria-label="Закрыть">×</button></div>
+    <div class="modal-body">
+      <p>«Земский круг» — совместная партия для 2–4 игроков. Ведущий создаёт лобби, остальные входят по коду. В начале партии игроки отмечают готовность; роли и решения распределяются по очереди.</p>
+      <div class="rules-grid">
+        <div class="rule-tile"><b>Событие</b><span>В каждом раунде один назначенный игрок выбирает один из двух ответов.</span></div>
+        <div class="rule-tile"><b>Четыре роли</b><span>Староста, казначей, воевода и посланник выполняют по одному действию. Остальные видят, чей ход сейчас ждёт игра.</span></div>
+        <div class="rule-tile"><b>Между раундами</b><span>Команда читает короткую историческую вставку. Следующий раунд начинается после отметки игроков или решения ведущего продолжить.</span></div>
+        <div class="rule-tile"><b>Восстановление связи</b><span>Обновите страницу или откройте ссылку повторно на том же устройстве. В течение двух минут ход ждёт отключившегося участника; затем ведущий сможет выбрать за него.</span></div>
+      </div>
+      <h3>Победа</h3><p>В конце шестого раунда команда должна дойти до Земского собора, сохранить не менее 2 запасов, 4 поддержки и 4 согласия, а угрозу удержать на уровне 4 или ниже. Партия заканчивается поражением, если угроза достигает 6 или поддержка либо согласие падают до нуля.</p>
+      <h3>Шкалы</h3><ul><li>Запасы — продовольствие и средства для движения.</li><li>Поддержка — готовность городов помогать.</li><li>Согласие — способность действовать вместе.</li><li>Угроза — риск потерять порядок; здесь меньше — лучше.</li></ul>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="sourcesDialog">
+    <div class="modal-head"><div><p class="eyebrow">Историческая основа</p><h2>Хроника и источники</h2></div><button class="modal-close" type="button" data-close-dialog="sourcesDialog" aria-label="Закрыть">×</button></div>
+    <div class="modal-body">
+      <p>Второе ополчение начало складываться в Нижнем Новгороде в 1611 году. Весной 1612 года его участники пришли в Ярославль, где ополчение укрепилось и действовал Совет всея земли. Летом отряды выступили к Москве; после освобождения столицы был созван Земский собор.</p>
+      <div class="source-entry"><b>Музеи Московского Кремля</b><span>Материал «Заседание Земского собора»: созыв после освобождения Москвы и решение об избрании Михаила Фёдоровича 21 февраля (3 марта) 1613 года.</span></div>
+      <div class="source-entry"><b>Ярославская областная Дума</b><span>Справка о пребывании ополчения в Ярославле с апреля по июль 1612 года и дальнейшем походе на Москву.</span></div>
+      <div class="source-entry"><b>Ярославский музей-заповедник</b><span>Материалы экспозиции «История Ярославского края» о составе и устройстве Второго народного ополчения.</span></div>
+      <div class="source-entry"><b>Научно-образовательный портал «Открытый текст»</b><span>Исследовательская хронология действий ополчения и становления Совета всея земли в Ярославле.</span></div>
+      <h3>Историческая реальность и игровой вымысел</h3><p>Четыре роли — собирательные функции, а шкалы, последствия выбора и темп партии придуманы для игры. Шесть раундов не соответствуют шести равным отрезкам исторического времени.</p>
+    </div>
+  </dialog>
+
+  <dialog class="modal confirm-modal" id="confirmDialog">
+    <div class="modal-head"><div><p class="eyebrow">Подтвердите действие</p><h2 id="confirmTitle">Выйти?</h2></div><button class="modal-close" type="button" data-close-dialog="confirmDialog" aria-label="Закрыть">×</button></div>
+    <div class="modal-body"><p id="confirmText"></p><div class="modal-actions"><button class="button button-secondary" type="button" data-close-dialog="confirmDialog">Отмена</button><button class="button button-primary" id="confirmActionButton" type="button">Продолжить</button></div></div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/rules.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>
