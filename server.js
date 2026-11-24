@@ -29,6 +29,7 @@ const app = express();
 app.disable("x-powered-by");
 if (process.env.TRUST_PROXY === "1") app.set("trust proxy", 1);
 app.use(helmet({
+  hsts: false,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -45,8 +46,13 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false
 }));
+const httpsHsts = helmet.hsts({ maxAge: 31536000, includeSubDomains: true });
+app.use((req, res, next) => {
+  if (req.secure) return httpsHsts(req, res, next);
+  next();
+});
 app.get("/health", (_req, res) => res.status(200).json({ ok: true, service: "zemsky-circle" }));
-app.use(express.static(PUBLIC_DIR, { index: "index.html", maxAge: "1h", etag: true }));
+app.use(express.static(PUBLIC_DIR, { index: "index.html", maxAge: 0, etag: true }));
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
