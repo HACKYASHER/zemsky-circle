@@ -38,6 +38,7 @@ app.use(helmet({
       imgSrc: ["'self'", "data:"],
       fontSrc: ["'self'", "data:"],
       connectSrc: ["'self'", "ws:", "wss:"],
+      upgradeInsecureRequests: null,
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
