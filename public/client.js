@@ -322,7 +322,7 @@
       return '<div class="track-row"><div class="track-top"><span class="track-label">' + track.icon + '　' + track.title +
         '</span><span class="track-value">' + value + '<small> / ' + max + '</small></span></div><div class="track-bar" role="meter" aria-label="' +
         track.title + '" aria-valuemin="0" aria-valuemax="' + max + '" aria-valuenow="' + value + '"><div class="track-fill ' +
-        track.key + '" data-value="' + value + '"></div>' + track.marks.map(mark => '<span class="track-mark ' + track.key + '" style="left:' + (mark.value / max * 100) + '%" title="' + mark.label + ': ' + mark.value + '">' + mark.value + '</span>').join("") +
+        track.key + '" data-value="' + value + '"></div>' + track.marks.map(mark => '<span class="track-mark ' + track.key + ' threshold-' + mark.value + '" title="' + mark.label + ': ' + mark.value + '"></span>').join("") +
         '</div><div class="track-foot">' + track.detail + '</div></div>';
     }).join("");
   }

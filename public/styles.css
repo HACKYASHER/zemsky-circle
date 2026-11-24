@@ -177,9 +177,12 @@ input::placeholder { color: #9c9b8b; }
 .track-bar { position: relative; height: 7px; margin: 11px 0 13px; border-radius: 99px; background: rgba(39,56,43,.14); }
 .track-fill { height: 100%; border-radius: inherit; transition: width .4s ease; }
 .track-mark { position: absolute; z-index: 1; top: -4px; transform: translateX(-50%); width: 2px; height: 15px; color: #586455; background: #455849; font: 0/0 Arial,sans-serif; }
-.track-mark:after { content: attr(title); position: absolute; top: 13px; left: 50%; transform: translateX(-50%); white-space: nowrap; color: #8d8b7b; font: 7px Arial,sans-serif; }
+.track-mark.supplies.threshold-2 { left: 20%; }
+.track-mark.supplies.threshold-3 { left: 30%; }
+.track-mark.support.threshold-4, .track-mark.unity.threshold-4 { left: 40%; }
+.track-mark.threat.threshold-4 { left: 66.6667%; }
+.track-mark.threat.threshold-6 { left: calc(100% - 1px); }
 .track-mark.threat { background: #d9a65a; }
-.track-mark.threat:after { color: #d2ae71; }
 .track-fill.supplies { background: #b68c49; }
 .track-fill.support { background: #819160; }
 .track-fill.unity { background: #638674; }
