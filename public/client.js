@@ -296,9 +296,11 @@
     const gain = effects.filter(([, value]) => value > 0).map(([key]) => ({ supplies: "припасов", support: "поддержки", unity: "согласия", threat: "напряжения" }[key]));
     return (gain.length ? "Польза: " + gain.join(" и ") + ". " : "") + (cost.length ? "Цена: " + cost.join(" и ") + "." : "Ресурсы не тратятся.");
   }
-  function upkeepLesson(round) {
+  function upkeepLesson(round, threat) {
     const cost = round <= 2 ? 1 : round <= 4 ? 2 : 3;
-    return "Снабжение дорожает: после этого раунда лагерь потратит " + cost + (cost === 1 ? " запас." : " запаса.") + " Обсудите, кто пополнит обоз.";
+    const surcharge = threat >= 4 ? 1 : 0;
+    return "После этого раунда лагерь потратит " + (cost + surcharge) + ((cost + surcharge) === 1 ? " запас." : " запаса.") +
+      (surcharge ? " Угроза 4+ добавляет 1 запас на охрану." : " Если удержать угрозу ниже 4, охрана не подорожает.") + " Обсудите, кто пополнит обоз.";
   }
   function renderRoute(game) {
     $("#routeList").innerHTML = window.ZemskyRules.ROUTE.map((stop, index) => {
@@ -310,17 +312,18 @@
   }
   function renderTracks(game) {
     const tracks = [
-      { key: "supplies", title: "Запасы", detail: "Нужны для похода", icon: "◈" },
-      { key: "support", title: "Поддержка", detail: "Города готовы помогать", icon: "⌂" },
-      { key: "unity", title: "Согласие", detail: "Команда держится вместе", icon: "◎" },
-      { key: "threat", title: "Угроза", detail: "Здесь меньше — лучше", icon: "⚑" }
+      { key: "supplies", title: "Запасы", detail: "2 — минимум для Собора · 3 — безопасный марш", icon: "◈", marks: [{ value: 2, label: "Финал" }, { value: 3, label: "Марш" }] },
+      { key: "support", title: "Поддержка", detail: "Для Земского собора нужно не меньше 4", icon: "⌂", marks: [{ value: 4, label: "Собор" }] },
+      { key: "unity", title: "Согласие", detail: "Для Земского собора нужно не меньше 4", icon: "◎", marks: [{ value: 4, label: "Собор" }] },
+      { key: "threat", title: "Угроза", detail: "4 — опасная зона · 6 — поражение", icon: "⚑", marks: [{ value: 4, label: "Опасно" }, { value: 6, label: "Поражение" }] }
     ];
     $("#trackList").innerHTML = tracks.map(track => {
       const max = window.ZemskyRules.MAX[track.key], value = game.tracks[track.key];
       return '<div class="track-row"><div class="track-top"><span class="track-label">' + track.icon + '　' + track.title +
         '</span><span class="track-value">' + value + '<small> / ' + max + '</small></span></div><div class="track-bar" role="meter" aria-label="' +
         track.title + '" aria-valuemin="0" aria-valuemax="' + max + '" aria-valuenow="' + value + '"><div class="track-fill ' +
-        track.key + '" data-value="' + value + '"></div></div><div class="track-foot">' + track.detail + '</div></div>';
+        track.key + '" data-value="' + value + '"></div>' + track.marks.map(mark => '<span class="track-mark ' + track.key + '" style="left:' + (mark.value / max * 100) + '%" title="' + mark.label + ': ' + mark.value + '">' + mark.value + '</span>').join("") +
+        '</div><div class="track-foot">' + track.detail + '</div></div>';
     }).join("");
   }
   function ownerForRole(game, roleIndex) {
@@ -358,7 +361,7 @@
       const lesson = roleActions.map(action => '<li><b>' + escapeHTML(action.title) + ':</b> ' + escapeHTML(actionLesson(action)) + '</li>').join("");
       card.innerHTML = '<div class="phase-kicker">Совет четырёх ролей · раунд ' + game.round + '</div><h2>Общее дело держится на каждом решении</h2><p>За раунд команда получает по одному ходу каждой роли. Один игрок выбирает, последствия почувствуют все — обсудите план вместе.</p>' +
         (activeRole ? '<div class="learning-note"><b>Сейчас действует роль «' + escapeHTML(activeRole.name) + '».</b><ul>' + lesson + '</ul></div>' : '') +
-        '<p class="phase-note">' + escapeHTML(upkeepLesson(game.round)) + '</p><div class="phase-wait">' + escapeHTML(waitingMessage()) + '</div><p class="phase-note">Осталось действий: ' + (4 - Object.values(game.actionsDone || {}).filter(Boolean).length) + ' из 4.</p>';
+        '<p class="phase-note">' + escapeHTML(upkeepLesson(game.round, game.tracks.threat)) + '</p><div class="phase-wait">' + escapeHTML(waitingMessage()) + '</div><p class="phase-note">Осталось действий: ' + (4 - Object.values(game.actionsDone || {}).filter(Boolean).length) + ' из 4.</p>';
     } else if (game.phase === "intermission") {
       const fact = game.intermissionFact || window.ZemskyRules.BETWEEN_ROUND_FACTS[game.round - 1];
       const connected = currentRoom.players.filter(player => player.connected && !player.left);
