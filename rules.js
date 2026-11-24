@@ -225,8 +225,9 @@ const ZemskyRules = (() => {
   }
   function finishIntermission(game) {
     if (game.phase !== "intermission") throw new Error("Сейчас нельзя завершить раунд.");
-    const upkeep = applyEffects(game, { supplies: -1 });
-    game.log.push({ round: game.round, title: "Итог раунда " + game.round, text: "Общие расходы на дорогу и лагерь: " + effectText(upkeep) + "." });
+    const upkeepCost = game.round <= 2 ? 1 : game.round <= 4 ? 2 : 3;
+    const upkeep = applyEffects(game, { supplies: -upkeepCost });
+    game.log.push({ round: game.round, title: "Итог раунда " + game.round, text: "По мере удаления от городов снабжать лагерь труднее. Расходы на дорогу и лагерь: " + effectText(upkeep) + "." });
     const collapse = collapseReason(game);
     if (collapse) { conclude(game, false, collapse); return; }
     if (game.round >= 6) {

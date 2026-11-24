@@ -273,6 +273,33 @@
     const names = { supplies: "запаса", support: "поддержки", unity: "согласия", threat: "угрозы" };
     return Object.entries(effect || {}).map(([key, amount]) => (amount > 0 ? "+" : "−") + Math.abs(amount) + " " + names[key]).join(" · ") || "без изменений";
   }
+  function actionLesson(action) {
+    const lessons = {
+      gather: "Обмениваете запас на поддержку городов — полезно, если припасов достаточно для похода.",
+      council: "Снижает угрозу и укрепляет согласие, но не продвигает отряд по маршруту.",
+      wagon: "Пополняет обоз. Запасы нужны для движения и содержания лагеря.",
+      levy: "Даёт больше припасов, чем обычный сбор, но ослабляет доверие городов.",
+      march: "Продвигает отряд быстрее, но тратит запасы и повышает угрозу.",
+      carefulMarch: "Тратит больше запасов, зато не увеличивает угрозу.",
+      guard: "Помогает переждать опасность: угроза ниже, согласие выше, маршрут без изменений.",
+      secure: "Стабилизирует подступы к Москве: уменьшает угрозу и возвращает поддержку.",
+      reserve: "Пополняет запасы ценой роста угрозы — это подготовка, а не бесплатный бонус.",
+      mediate: "Укрепляет согласие без расхода запасов; особенно полезно перед финальным решением.",
+      letters: "Укрепляет поддержку и согласие, но отправка грамот стоит одного запаса.",
+      sobor: "Последний шаг маршрута. Нужны поддержка и согласие не ниже 4 и достаточный запас."
+    };
+    return lessons[action.id] || "Сравните пользу и цену с текущими шкалами и целью команды.";
+  }
+  function choiceLesson(choice) {
+    const effects = Object.entries(choice.effect || {});
+    const cost = effects.filter(([, value]) => value < 0).map(([key]) => ({ supplies: "запасов", support: "поддержки городов", unity: "согласия", threat: "безопасности" }[key]));
+    const gain = effects.filter(([, value]) => value > 0).map(([key]) => ({ supplies: "припасов", support: "поддержки", unity: "согласия", threat: "напряжения" }[key]));
+    return (gain.length ? "Польза: " + gain.join(" и ") + ". " : "") + (cost.length ? "Цена: " + cost.join(" и ") + "." : "Ресурсы не тратятся.");
+  }
+  function upkeepLesson(round) {
+    const cost = round <= 2 ? 1 : round <= 4 ? 2 : 3;
+    return "Снабжение дорожает: после этого раунда лагерь потратит " + cost + (cost === 1 ? " запас." : " запаса.") + " Обсудите, кто пополнит обоз.";
+  }
   function renderRoute(game) {
     $("#routeList").innerHTML = window.ZemskyRules.ROUTE.map((stop, index) => {
       const cls = index < game.place ? "passed" : index === game.place ? "current" : "";
@@ -321,13 +348,17 @@
       const event = window.ZemskyRules.EVENTS[game.round - 1];
       const allowed = canControlActor();
       card.innerHTML = '<div class="phase-kicker">Событие раунда ' + game.round + ' · выберите ответ</div><h2>' + escapeHTML(event.title) +
-        '</h2><p>' + escapeHTML(event.fact) + '</p>' + '<div class="choice-grid">' +
+        '</h2><p>' + escapeHTML(event.fact) + '</p><p class="learning-note">У каждого ответа есть цена. Сравните последствия и выберите, какой ресурс важнее команде сейчас.</p>' + '<div class="choice-grid">' +
         event.choices.map((choice, index) => '<button type="button" class="choice-button" data-choice="' + index + '" ' + (allowed ? "" : "disabled") +
-          '><b>' + escapeHTML(choice.title) + '</b><span>' + effectText(choice.effect) + '</span></button>').join("") + '</div>';
+          '><b>' + escapeHTML(choice.title) + '</b><span>' + effectText(choice.effect) + '</span><span class="choice-reason">' + escapeHTML(choiceLesson(choice)) + '</span></button>').join("") + '</div>';
     } else if (game.phase === "actions") {
       const actor = currentRoom.currentActor;
-      card.innerHTML = '<div class="phase-kicker">Совет четырёх ролей · раунд ' + game.round + '</div><h2>Общее дело держится на каждом решении</h2><p>Один раз за раунд действует каждая роль. Сначала выбирает назначенный игрок, остальные видят его ход и могут обсуждать план.</p><div class="phase-wait">' +
-        escapeHTML(waitingMessage()) + '</div><p class="phase-note">Осталось действий: ' + (4 - Object.values(game.actionsDone || {}).filter(Boolean).length) + ' из 4.</p>';
+      const activeRole = window.ZemskyRules.ROLES.find(role => role.key === actor?.roleKey);
+      const roleActions = activeRole ? window.ZemskyRules.actionsFor(game, activeRole.key) : [];
+      const lesson = roleActions.map(action => '<li><b>' + escapeHTML(action.title) + ':</b> ' + escapeHTML(actionLesson(action)) + '</li>').join("");
+      card.innerHTML = '<div class="phase-kicker">Совет четырёх ролей · раунд ' + game.round + '</div><h2>Общее дело держится на каждом решении</h2><p>За раунд команда получает по одному ходу каждой роли. Один игрок выбирает, последствия почувствуют все — обсудите план вместе.</p>' +
+        (activeRole ? '<div class="learning-note"><b>Сейчас действует роль «' + escapeHTML(activeRole.name) + '».</b><ul>' + lesson + '</ul></div>' : '') +
+        '<p class="phase-note">' + escapeHTML(upkeepLesson(game.round)) + '</p><div class="phase-wait">' + escapeHTML(waitingMessage()) + '</div><p class="phase-note">Осталось действий: ' + (4 - Object.values(game.actionsDone || {}).filter(Boolean).length) + ' из 4.</p>';
     } else if (game.phase === "intermission") {
       const fact = game.intermissionFact || window.ZemskyRules.BETWEEN_ROUND_FACTS[game.round - 1];
       const connected = currentRoom.players.filter(player => player.connected && !player.left);
@@ -377,7 +408,7 @@
           const reason = !action.can ? "Не хватает ресурсов для действия." : !canAct ? status : "";
           return '<button type="button" class="action-button" data-role="' + role.key + '" data-action="' + action.id + '" ' +
             (disabled ? "disabled " : "") + 'title="' + escapeHTML(reason) + '"><b>' + escapeHTML(action.title) + '</b><span>' +
-            escapeHTML(action.text) + '</span><span class="effect">' + escapeHTML(action.note) + '</span></button>';
+            escapeHTML(action.text) + '</span><span class="action-lesson">Зачем: ' + escapeHTML(actionLesson(action)) + '</span><span class="effect">' + escapeHTML(action.note) + '</span></button>';
         }).join("") + '</div><div class="role-status">' + escapeHTML(status) + '</div></article>';
     }).join("");
   }
